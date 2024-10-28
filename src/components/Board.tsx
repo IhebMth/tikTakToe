@@ -3,11 +3,17 @@ import React from 'react';
 type BoardProps = {
   squares: string[];
   onClick: (index: number) => void;
+  boardSize: number;
 };
 
-const Board: React.FC<BoardProps> = ({ squares, onClick }) => {
+const Board: React.FC<BoardProps> = ({ squares, onClick, boardSize }) => {
+  const gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
+
   return (
-    <div className="grid grid-cols-3  gap-4 w-64">
+    <div
+      className="gap-4 w-100"
+      style={{ display: 'grid', gridTemplateColumns: gridTemplateColumns }}
+    >
       {squares.map((square, index) => (
         <button
           key={index}
