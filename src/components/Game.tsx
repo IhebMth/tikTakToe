@@ -97,26 +97,49 @@ const Game: React.FC = () => {
   );
 };
 
-const calculateWinner = (squares: string[], size: number) => {
+const calculateWinner = (squares: string[], size:number) => {
   const lines = [];
 
-  
   for (let i = 0; i < size; i++) {
-    lines.push(Array.from({ length: size }, (_, j) => i * size + j)); 
-    lines.push(Array.from({ length: size }, (_, j) => j * size + i)); 
+    let horizontal = [];
+
+    for (let j = 0; j < size; j++) {
+      horizontal.push(i * size + j);
+    }
+    lines.push(horizontal);
+
+    let vertical = [];
+    for (let j = 0; j < size; j++) {
+      vertical.push(j * size + i);
+    }
+    lines.push(vertical);
   }
 
- 
-  lines.push(Array.from({ length: size }, (_, i) => i * (size + 1))); 
-  lines.push(Array.from({ length: size }, (_, i) => (i + 1) * (size - 1))); 
+  for (let i = 0; i <= size - 3; i++) {
+    for (let j = 0; j <= size - 3; j++) {
+      let diagonal1 = [];
+      let diagonal2 = [];
+      for (let k = 0; k < 3; k++) {
+        diagonal1.push((i + k) * size + (j + k)); 
+        diagonal2.push((i + k) * size + (j + 3 - 1 - k)); 
+      }
+      lines.push(diagonal1);
+      lines.push(diagonal2);
+    }
+  }
 
-  for (const line of lines) {
+  
+  for (let line of lines) {
     const [a, b, c] = line;
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
       return squares[a];
     }
   }
+
   return null;
 };
 
+
+
 export default Game;
+
