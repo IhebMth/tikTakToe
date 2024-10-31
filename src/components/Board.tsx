@@ -3,11 +3,11 @@ import React from 'react';
 type BoardProps = {
   squares: string[];
   onClick: (index: number) => void;
-  boardSize: number;
+  boardSize: number; 
 };
 
 const Board: React.FC<BoardProps> = ({ squares, onClick, boardSize }) => {
-  const gridTemplateColumns = `repeat(${boardSize}, 1fr)`;
+  const gridTemplateColumns = `repeat(${boardSize}, 1fr)`; // Grid layout
 
   return (
     <div

@@ -1,54 +1,111 @@
 import React, { useState, useEffect } from 'react';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import Board from './Board';
 
-const Game: React.FC = () => {
-  const [boardSize, setBoardSize] = useState(3);
+type GameProps = {
+  boardSize: number; 
+  setBoardSize: React.Dispatch<React.SetStateAction<number>>; 
+};
+
+const Game: React.FC<GameProps> = ({ boardSize, setBoardSize }) => {
   const [squares, setSquares] = useState(Array(boardSize * boardSize).fill(''));
   const [xIsNext, setXIsNext] = useState(true);
   const [score, setScore] = useState({ X: 0, O: 0 });
   const [isPlayingWithComputer, setIsPlayingWithComputer] = useState(false);
+  const [isPlayerTurn, setIsPlayerTurn] = useState(true);
+  const [playerSymbol, setPlayerSymbol] = useState<'X' | 'O'>('X');
+  const [symbolChosen, setSymbolChosen] = useState(false);
 
+  
   useEffect(() => {
-    setSquares(Array(boardSize * boardSize).fill('')); 
+    setSquares(Array(boardSize * boardSize).fill(''));
   }, [boardSize]);
 
-  const handleClick = (index: number) => {
-    if (squares[index] || calculateWinner(squares, boardSize)) return;
+  const chooseSymbol = () => {
+    if (!symbolChosen) {
+      toast.info(
+        <div className="w-full flex flex-col items-center justify-center p-2 bg-white rounded-lg shadow-xl text-center border border-gray-300">
+          <p className="mb-4 text-lg font-semibold text-gray-800">Please choose your symbol:</p>
+          <div className="flex space-x-4">
+            <button 
+              onClick={() => setPlayerSymbolAndPlay('X')} 
+              className="px-5 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition duration-300 transform hover:scale-105">
+              Choose X
+            </button>
+            <button 
+              onClick={() => setPlayerSymbolAndPlay('O')} 
+              className="px-5 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition duration-300 transform hover:scale-105">
+              Choose O
+            </button>
+          </div>
+        </div>,
+        {
+          autoClose: false,
+          position: 'top-center',
+          className: 'toast-custom',
+          bodyClassName: 'toast-body',
+          progressClassName: 'toast-progress',
+        }
+      );
+    }
+  };
 
+  const setPlayerSymbolAndPlay = (symbol: 'X' | 'O') => {
+    setPlayerSymbol(symbol);
+    setSymbolChosen(true);
+    toast.dismiss();
+  };
+
+  const handleClick = (index: number) => {
+    if (squares[index] || calculateWinner(squares, boardSize) ) return;
+    if (isPlayingWithComputer && !isPlayerTurn) return;
+    if (!symbolChosen) return;
+    
     const nextSquares = [...squares];
-    nextSquares[index] = xIsNext ? 'X' : 'O';
+    nextSquares[index] = xIsNext ? playerSymbol : playerSymbol === 'X' ? 'O' : 'X';
     setSquares(nextSquares);
 
     const winner = calculateWinner(nextSquares, boardSize);
     if (winner) {
       setScore(prevScore => ({
         ...prevScore,
-        [winner]: (prevScore[winner as keyof typeof prevScore] || 0) + 1,
+        [winner]: prevScore[winner as keyof typeof prevScore] + 1,
       }));
     } else if (nextSquares.every(square => square !== '')) {
-      resetGame();
+      resetBoard();
     } else {
       setXIsNext(!xIsNext);
+      if (isPlayingWithComputer) setIsPlayerTurn(!isPlayerTurn);
     }
   };
 
   useEffect(() => {
-    if (isPlayingWithComputer && !xIsNext) {
+    if (isPlayingWithComputer && !xIsNext && !isPlayerTurn && !calculateWinner(squares, boardSize)) {
       const computerMove = () => {
-        const emptySquares = squares.map((square, index) => square === '' ? index : null).filter(x => x !== null);
-        if (emptySquares.length > 0) {
-          const randomIndex = emptySquares[Math.floor(Math.random() * emptySquares.length)];
-          handleClick(randomIndex);
-        }
+        const emptySquares = squares.map((value, index) => (value === '' ? index : null)).filter(index => index !== null);
+        const randomMove = emptySquares[Math.floor(Math.random() * emptySquares.length)] as number;
+        
+        const nextSquares = [...squares];
+        nextSquares[randomMove] = playerSymbol === 'X' ? 'O' : 'X';
+        setSquares(nextSquares);
+        setXIsNext(true);
+        setIsPlayerTurn(true);
       };
-      const timeoutId = setTimeout(computerMove, 500);
-      return () => clearTimeout(timeoutId);
+      setTimeout(computerMove, 1000);
     }
-  }, [squares, xIsNext, isPlayingWithComputer]);
+  }, [squares, xIsNext, isPlayingWithComputer, isPlayerTurn]);
 
-  const resetGame = () => {
+  const resetBoard = () => {
     setSquares(Array(boardSize * boardSize).fill(''));
     setXIsNext(true);
+    setIsPlayerTurn(true);
+    setSymbolChosen(false);
+  };
+
+  const resetGame = () => {
+    setScore({ X: 0, O: 0 });
+    resetBoard();
   };
 
   const togglePlayMode = () => {
@@ -58,7 +115,12 @@ const Game: React.FC = () => {
 
   const changeBoardSize = (newSize: number) => {
     setBoardSize(newSize);
+    resetGame();
   };
+
+  useEffect(() => {
+    if (!symbolChosen) chooseSymbol();
+  }, [symbolChosen]);
 
   return (
     <div className='flex flex-col items-center'>
@@ -67,79 +129,80 @@ const Game: React.FC = () => {
         {calculateWinner(squares, boardSize) ? (
           <div className="text-2xl font-bold text-green-500">Winner: {calculateWinner(squares, boardSize)} 🎉</div>
         ) : (
-          <div className="text-xl font-medium">Next Player: {xIsNext ? 'X' : 'O'}</div>
+          <div className="text-xl font-medium">Next Player: {xIsNext ? playerSymbol : playerSymbol === 'X' ? 'O' : 'X'}</div>
         )}
       </div>
       <div className="flex mt-6 space-x-4">
-        <button
-          onClick={resetGame}
-          className="flex-1 px-6 py-3 bg-red-500 hover:bg-red-700 transition duration-300 text-white font-semibold rounded-lg shadow-lg transform hover:scale-105"
-        >
-          Reset Game
-        </button>
-        <button
-          onClick={togglePlayMode}
-          className="flex-1 px-6 py-3 bg-blue-700 hover:bg-blue-900 transition duration-300 text-white font-semibold rounded-lg shadow-lg transform hover:scale-105"
-        >
+        <button onClick={resetGame} className="px-6 py-3 bg-red-500 text-white rounded-lg">New Game</button>
+        <button onClick={togglePlayMode} className="px-6 py-3 bg-blue-700 text-white rounded-lg">
           {isPlayingWithComputer ? 'Play with Friend' : 'Play with Computer'}
         </button>
       </div>
-      <div className="mt-6 text-lg text-center border-t border-gray-300 pt-4">
+      <div className="mt-6 text-lg text-center border-t pt-4">
         <p className="font-semibold">Score</p>
-        <p className="text-xl">X: {score.X} | O: {score.O}</p>
+        <p>X: {score.X} | O: {score.O}</p>
       </div>
       <div className="mt-4">
-        <button onClick={() => changeBoardSize(3)} className="mx-2 bg-gray-700 hover:bg-gray-500 rounded-lg shadow-lg p-2">3x3</button>
-        <button onClick={() => changeBoardSize(4)} className="mx-2 bg-gray-700 hover:bg-gray-500 rounded-lg shadow-lg p-2">4x4</button>
-        <button onClick={() => changeBoardSize(5)} className="mx-2 bg-gray-700 hover:bg-gray-500 rounded-lg shadow-lg p-2">5x5</button>
+        {[3, 4, 5, 6, 10].map(size => (
+          <button key={size} onClick={() => changeBoardSize(size)} className="mx-2 bg-gray-700 text-white rounded-lg p-2">{size}x{size}</button>
+        ))}
       </div>
+      <ToastContainer />
     </div>
   );
 };
 
-const calculateWinner = (squares: string[], size:number) => {
-  const lines = [];
+const calculateWinner = (squares: string[], size: number): string | null => {
+  const lines: number[][] = [];
 
+  
   for (let i = 0; i < size; i++) {
-    let horizontal = [];
-
-    for (let j = 0; j < size; j++) {
-      horizontal.push(i * size + j);
-    }
-    lines.push(horizontal);
-
-    let vertical = [];
-    for (let j = 0; j < size; j++) {
-      vertical.push(j * size + i);
-    }
-    lines.push(vertical);
-  }
-
-  for (let i = 0; i <= size - 3; i++) {
     for (let j = 0; j <= size - 3; j++) {
-      let diagonal1 = [];
-      let diagonal2 = [];
-      for (let k = 0; k < 3; k++) {
-        diagonal1.push((i + k) * size + (j + k)); 
-        diagonal2.push((i + k) * size + (j + 3 - 1 - k)); 
+      const a = squares[i * size + j];
+      const b = squares[i * size + j + 1];
+      const c = squares[i * size + j + 2];
+      if (a && a === b && a === c) {
+        return a; 
       }
-      lines.push(diagonal1);
-      lines.push(diagonal2);
     }
   }
 
   
-  for (let line of lines) {
-    const [a, b, c] = line;
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a];
+  for (let i = 0; i < size; i++) {
+    for (let j = 0; j <= size - 3; j++) {
+      const a = squares[j * size + i];
+      const b = squares[(j + 1) * size + i];
+      const c = squares[(j + 2) * size + i];
+      if (a && a === b && a === c) {
+        return a; 
+      }
     }
   }
 
-  return null;
+  for (let i = 0; i <= size - 3; i++) {
+    for (let j = 0; j <= size - 3; j++) {
+     
+      lines.push([i * size + j, (i + 1) * size + (j + 1), (i + 2) * size + (j + 2)]);
+      
+      lines.push([i * size + (j + 2), (i + 1) * size + (j + 1), (i + 2) * size + j]);
+    }
+  }
+
+  
+  for (const line of lines) {
+    const [a, b, c] = line; 
+    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
+      return squares[a]; 
+    }
+  }
+
+  return null; 
 };
 
 
 
-export default Game;
 
+
+
+
+export default Game;
