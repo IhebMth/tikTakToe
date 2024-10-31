@@ -173,9 +173,7 @@ const Game: React.FC<GameProps> = ({ boardSize, setBoardSize }) => {
 };
 
 const calculateWinner = (squares: string[], size: number): string | null => {
-  const lines: number[][] = [];
 
-  
   for (let i = 0; i < size; i++) {
     for (let j = 0; j <= size - 3; j++) {
       const a = squares[i * size + j];
@@ -187,7 +185,6 @@ const calculateWinner = (squares: string[], size: number): string | null => {
     }
   }
 
-  
   for (let i = 0; i < size; i++) {
     for (let j = 0; j <= size - 3; j++) {
       const a = squares[j * size + i];
@@ -199,25 +196,29 @@ const calculateWinner = (squares: string[], size: number): string | null => {
     }
   }
 
+
+  
   for (let i = 0; i <= size - 3; i++) {
     for (let j = 0; j <= size - 3; j++) {
-     
-      lines.push([i * size + j, (i + 1) * size + (j + 1), (i + 2) * size + (j + 2)]);
-      
-      lines.push([i * size + (j + 2), (i + 1) * size + (j + 1), (i + 2) * size + j]);
-    }
-  }
+      const a = squares[i * size + j];
+      const b = squares[(i + 1) * size + (j + 1)];
+      const c = squares[(i + 2) * size + (j + 2)];
+      if (a && a === b && a === c) {
+        return a; 
+      }
 
-
-  for (const line of lines) {
-    const [a, b, c] = line; 
-    if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
-      return squares[a]; 
+      const d = squares[i * size + (j + 2)];
+      const e = squares[(i + 1) * size + (j + 1)];
+      const f = squares[(i + 2) * size + j];
+      if (d && d === e && d === f) {
+        return d; 
+      }
     }
   }
 
   return null; 
 };
+
 
 
 const getWinningConditions = (squares: string[], player: string, size: number) => {
