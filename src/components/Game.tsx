@@ -188,7 +188,7 @@ const calculateWinner = (squares: string[], size: number): string | null => {
     }
   }
 
-  
+  //conditions 
   for (const line of lines) {
     const [a, b, c] = line; 
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
