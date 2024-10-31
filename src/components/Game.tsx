@@ -83,15 +83,35 @@ const Game: React.FC<GameProps> = ({ boardSize, setBoardSize }) => {
   useEffect(() => {
     if (isPlayingWithComputer && !xIsNext && !isPlayerTurn && !calculateWinner(squares, boardSize)) {
       const computerMove = () => {
-        const emptySquares = squares.map((value, index) => (value === '' ? index : null)).filter(index => index !== null);
-        const randomMove = emptySquares[Math.floor(Math.random() * emptySquares.length)] as number;
+        const winningLine = getWinningConditions(squares, playerSymbol === 'X' ? 'O' : 'X', boardSize);
+      
         
-        const nextSquares = [...squares];
-        nextSquares[randomMove] = playerSymbol === 'X' ? 'O' : 'X';
-        setSquares(nextSquares);
-        setXIsNext(true);
-        setIsPlayerTurn(true);
+        if (winningLine) {
+          const emptyIndex = winningLine.find(index => squares[index] === '');
+          if (emptyIndex !== undefined) {
+            const nextSquares = [...squares];
+            nextSquares[emptyIndex] = playerSymbol === 'X' ? 'O' : 'X';
+            setSquares(nextSquares);
+            setXIsNext(true);
+            setIsPlayerTurn(true);
+            return;
+          }
+        }
+     
+        const emptySquares = squares
+          .map((value, index) => (value === '' ? index : null))
+          .filter(index => index !== null) as number[];
+      
+        if (emptySquares.length > 0) {
+          const randomMove = emptySquares[Math.floor(Math.random() * emptySquares.length)];
+          const nextSquares = [...squares];
+          nextSquares[randomMove] = playerSymbol === 'X' ? 'O' : 'X';
+          setSquares(nextSquares);
+          setXIsNext(true);
+          setIsPlayerTurn(true);
+        }
       };
+      
       setTimeout(computerMove, 1000);
     }
   }, [squares, xIsNext, isPlayingWithComputer, isPlayerTurn]);
@@ -188,7 +208,7 @@ const calculateWinner = (squares: string[], size: number): string | null => {
     }
   }
 
-  //conditions 
+
   for (const line of lines) {
     const [a, b, c] = line; 
     if (squares[a] && squares[a] === squares[b] && squares[a] === squares[c]) {
@@ -200,6 +220,39 @@ const calculateWinner = (squares: string[], size: number): string | null => {
 };
 
 
+const getWinningConditions = (squares: string[], player: string, size: number) => {
+  const lines: number[][] = [];
+
+  for (let i = 0; i < size; i++) {
+    for (let j = 0; j <= size - 3; j++) {
+      lines.push([i * size + j, i * size + j + 1, i * size + j + 2]);
+    }
+  }
+
+  for (let i = 0; i < size; i++) {
+    for (let j = 0; j <= size - 3; j++) {
+      lines.push([j * size + i, (j + 1) * size + i, (j + 2) * size + i]);
+    }
+  }
+
+  for (let i = 0; i <= size - 3; i++) {
+    for (let j = 0; j <= size - 3; j++) {
+      lines.push([i * size + j, (i + 1) * size + (j + 1), (i + 2) * size + (j + 2)]);
+      lines.push([i * size + (j + 2), (i + 1) * size + (j + 1), (i + 2) * size + j]); 
+    }
+  }
+
+  for (const line of lines) {
+    const lineSquares = line.map(index => squares[index]);
+    const score = lineSquares.reduce((acc, square) => acc + (square === player ? 1 : 0), 0);
+    
+    if (score === 2 && lineSquares.includes('')) {
+      return line; 
+    }
+  }
+
+  return null; 
+};
 
 
 
